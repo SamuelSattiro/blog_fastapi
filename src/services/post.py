@@ -1,3 +1,4 @@
+from datetime import timezone
 from databases.interfaces import Record
 from src.database import database
 from src.models.post import posts
@@ -18,12 +19,18 @@ class PostService:
         return await database.fetch_all(query)
 
     async def create(self, post: PostIn) -> int:
+        published_at = post.published_at
+
+        if published_at and published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=timezone.utc)
+
         command = posts.insert().values(
             title=post.title,
             content=post.content,
-            published_at=post.published_at,
+            published_at=published_at,
             published=post.published,
         )
+
         return await database.execute(command)
 
     async def read(self, id: int) -> Record:
